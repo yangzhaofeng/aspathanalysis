@@ -4,6 +4,29 @@
 #include <time.h>
 #include <string.h>
 
+const int tier1[] = {
+	7018, // AT&T
+	3356, // Level 3
+//	3549, // Level 3
+	3320, // Deuteche Telekom
+	3257, // GTT
+	6830, // liberty global
+	2914, // NTT
+	5511, // Orange
+	3491, // PCCW
+	1239, // Sprint
+	6453, // TATA
+	6762, // TELECOM ITALIA
+	12956, // Telefonica
+	1299, // Telia
+	701, // Verizon UUnet
+	6461, // Zayo
+	174, // Cogent
+	2828, // MCI Verizon Business
+	6939, // Hurricane Electric
+	7922 // Comcast
+};
+
 typedef struct bgp
 {
 	const char* bgp_protocol;
