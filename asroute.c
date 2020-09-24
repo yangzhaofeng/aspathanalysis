@@ -120,7 +120,53 @@ bool asselect(const int* aspath, const int majoras, const int* excludeas, const 
 
 }
 
+int aslength(const int* aspath, const int majoras){
+	int pathlength = 0;
+	int length = -1;
+	for(int i=0; aspath[i] != 0; i++){
+		pathlength++;
+	}
+	//fprintf(stderr, "pathlength = %d\n", pathlength);
+	int asindex = pathlength - 1;
+	int lastas = aspath[pathlength-1];
+	for(int i = pathlength-1; i >= 0; i--){
+		if(aspath[i] == majoras){
+			length = asindex - i;
+			break;
+		}else{
+			if(aspath[i] == lastas){
+				asindex = i; // ignore AS suspend
+			}
+		}
+	}
+	return length;
+}
+
+bool tier1contain(const int* aspath){
+	bool contain = false;
+	for(int i=0; i<sizeof(tier1)/sizeof(int); i++){
+		if(asselect(aspath, tier1[i], NULL, 0)){
+			contain = true;
+			break;
+		}
+	}
+	return contain;
+}
+
+int tier1length(const int* aspath){
+	int length = -1;
+	//fprintf(stderr, "sizeof(tier1)/sizeof(int) = %d\n", sizeof(tier1)/sizeof(int));
+	for(int i=0; i<sizeof(tier1)/sizeof(int); i++){
+		int lengthbuff = aslength(aspath, tier1[i]);
+		if(lengthbuff != -1 && (length == -1 || lengthbuff < length)){
+			length = lengthbuff;
+		}
+	}
+	return length;
+}
+
 int main(const int argc, const char* argv[]){
+	//fprintf(stderr, "sizeof(tier1)/sizeof(int) = %d\n", sizeof(tier1)/sizeof(int));
 	int majoras = atoi(argv[1]);
 	int* excludeas = calloc(argc-2, sizeof(int));
 	for(int i=2; i <= argc-1; i++){
@@ -129,12 +175,47 @@ int main(const int argc, const char* argv[]){
 
 	char* line = NULL;
 	size_t linelength = 0;
+	char prevprefix[44]; // 0000:0000:0000:0000:0000:0000:0000:0000/128
+	int length_majoras = -1;
+	int length_tier1 = -1;
 	while (getline(&line, &linelength, stdin) != -1){
-		const bgp route = parsebgp(line);
-		bool routeselected = asselect(route.aspath, majoras, excludeas, argc-2);
-		if(routeselected){
-			printf("%s\n", route.prefix);
+		if(line[0] != 'T'){
+			break;
 		}
+		const bgp route = parsebgp(line);
+		if(strcmp(prevprefix, route.prefix) != 0){
+			if(length_majoras != -1 && (length_tier1 == -1 || length_majoras < length_tier1)){
+				//fprintf(stderr, "length_majoras == %d, length_tier1 == %d\n", length_majoras, length_tier1);
+				printf("%s\n", prevprefix);
+			}
+			length_majoras = -1;
+			length_tier1 = -1;
+			prevprefix[0] = 0;
+		}
+		bool routeselected = asselect(route.aspath, majoras, excludeas, argc-2) && asselect(route.aspath, majoras, tier1, sizeof(tier1)/sizeof(int));
+		if(routeselected){
+			int length = -1;
+			if(tier1contain(route.aspath)){
+				length = aslength(route.aspath, majoras);
+			}
+			if(length!=-1 && (length_majoras==-1 || length<length_majoras)){
+				length_majoras = length;
+			}
+		}else{
+			int length = tier1length(route.aspath);
+			if(length!=-1 && (length_tier1==-1 || length<length_tier1)){
+				length_tier1 = length;
+			}
+		}
+		strcpy(prevprefix, route.prefix);
 	}
+	if(length_majoras != -1 && (length_tier1 == -1 || length_majoras < length_tier1)){
+		//fprintf(stderr, "length_majoras == %d, length_tier1 == %d\n", length_majoras, length_tier1);
+		printf("%s\n", prevprefix);
+	}
+	length_majoras = -1;
+	length_tier1 = -1;
+	prevprefix[0] = 0;
+
 	free(excludeas);
 }
