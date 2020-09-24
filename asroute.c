@@ -184,6 +184,7 @@ int main(const int argc, const char* argv[]){
 		}
 		const bgp route = parsebgp(line);
 		if(strcmp(prevprefix, route.prefix) != 0){
+			//fprintf(stderr, "prefix == %s, length_majoras == %d, length_tier1 == %d\n", prevprefix, length_majoras, length_tier1);
 			if(length_majoras != -1 && (length_tier1 == -1 || (length_majoras == 0 && length_tier1 == 0) || length_majoras < length_tier1)){
 				//fprintf(stderr, "length_majoras == %d, length_tier1 == %d\n", length_majoras, length_tier1);
 				printf("%s\n", prevprefix);
@@ -194,9 +195,10 @@ int main(const int argc, const char* argv[]){
 		}
 		bool routeselected = asselect(route.aspath, majoras, excludeas, argc-2) && asselect(route.aspath, majoras, tier1, sizeof(tier1)/sizeof(int));
 		if(routeselected){
-			int length = -1;
-			if(tier1contain(route.aspath)){
-				length = aslength(route.aspath, majoras);
+			int length = aslength(route.aspath, majoras);
+			bool intier1 = tier1contain(route.aspath);
+			if(!(intier1 || length == 0)){
+				length = -1;
 			}
 			if(length!=-1 && (length_majoras==-1 || length<length_majoras)){
 				length_majoras = length;
