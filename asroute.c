@@ -180,7 +180,7 @@ int main(const int argc, const char* argv[]){
 	int length_tier1 = -1;
 	while (getline(&line, &linelength, stdin) != -1){
 		if(line[0] != 'T'){
-			break;
+			continue;
 		}
 		const bgp route = parsebgp(line);
 		if(strcmp(prevprefix, route.prefix) != 0){
