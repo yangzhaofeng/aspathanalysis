@@ -184,7 +184,7 @@ int main(const int argc, const char* argv[]){
 		}
 		const bgp route = parsebgp(line);
 		if(strcmp(prevprefix, route.prefix) != 0){
-			if(length_majoras != -1 && (length_tier1 == -1 || length_majoras < length_tier1)){
+			if(length_majoras != -1 && (length_tier1 == -1 || (length_majoras == 0 && length_tier1 == 0) || length_majoras < length_tier1)){
 				//fprintf(stderr, "length_majoras == %d, length_tier1 == %d\n", length_majoras, length_tier1);
 				printf("%s\n", prevprefix);
 			}
