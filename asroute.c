@@ -178,6 +178,9 @@ int main(const int argc, const char* argv[]){
 	char prevprefix[44]; // 0000:0000:0000:0000:0000:0000:0000:0000/128
 	int length_majoras = -1;
 	int length_tier1 = -1;
+	//bool tomajoras = false;
+	//bool tootheras = false;
+	//bool ismajoras = false;
 	while (getline(&line, &linelength, stdin) != -1){
 		if(line[0] != 'T'){
 			continue;
@@ -185,16 +188,21 @@ int main(const int argc, const char* argv[]){
 		const bgp route = parsebgp(line);
 		if(strcmp(prevprefix, route.prefix) != 0){
 			//fprintf(stderr, "prefix == %s, length_majoras == %d, length_tier1 == %d\n", prevprefix, length_majoras, length_tier1);
-			if(length_majoras != -1 && (length_tier1 == -1 || (length_majoras == 0 && length_tier1 == 0) || length_majoras < length_tier1)){
+			if( (length_majoras != -1 && (length_tier1 == -1 || (length_majoras == 0 && length_tier1 == 0) || length_majoras < length_tier1))){
 				//fprintf(stderr, "length_majoras == %d, length_tier1 == %d\n", length_majoras, length_tier1);
 				printf("%s\n", prevprefix);
 			}
 			length_majoras = -1;
 			length_tier1 = -1;
+			//tomajoras = false;
+			//tootheras = false;
 			prevprefix[0] = 0;
 		}
-		bool routeselected = asselect(route.aspath, majoras, excludeas, argc-2) && asselect(route.aspath, majoras, tier1, sizeof(tier1)/sizeof(int));
+		bool majorselect = asselect(route.aspath, majoras, excludeas, argc-2);
+		bool norighttier1 = asselect(route.aspath, majoras, tier1, sizeof(tier1)/sizeof(int));
+		bool routeselected = majorselect && norighttier1;
 		if(routeselected){
+			//tomajoras = true;
 			int length = aslength(route.aspath, majoras);
 			bool intier1 = tier1contain(route.aspath);
 			if(!(intier1 || length == 0)){
@@ -204,6 +212,7 @@ int main(const int argc, const char* argv[]){
 				length_majoras = length;
 			}
 		}else{
+			//tootheras = true;
 			int length = tier1length(route.aspath);
 			if(length!=-1 && (length_tier1==-1 || length<length_tier1)){
 				length_tier1 = length;
@@ -211,7 +220,7 @@ int main(const int argc, const char* argv[]){
 		}
 		strcpy(prevprefix, route.prefix);
 	}
-	if(length_majoras != -1 && (length_tier1 == -1 || length_majoras < length_tier1)){
+	if( (length_majoras != -1 && (length_tier1 == -1 || (length_majoras == 0 && length_tier1 == 0) || length_majoras < length_tier1))){
 		//fprintf(stderr, "length_majoras == %d, length_tier1 == %d\n", length_majoras, length_tier1);
 		printf("%s\n", prevprefix);
 	}
